@@ -70,20 +70,20 @@ const TopicDetails = () => {
         <ArrowLeft size={14} /> Back to Topics Library
       </button>
 
-      {error ? (
+      {error && (
         <div className="error-banner">
           <AlertCircle size={20} />
           <span>{error}</span>
         </div>
-      ) : loading || !topic ? (
-        <p style={{ color: 'var(--text-muted)' }}>Loading topic details...</p>
-      ) : (
+      )}
+
+      {topic && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span className="topic-category">
-              <Layers size={16} /> {topic.category}
+              <Layers size={16} /> {topic.category || 'General Speaking'}
             </span>
-            {getDifficultyBadge(topic.difficulty)}
+            {getDifficultyBadge(topic.difficulty || 'Beginner')}
           </div>
 
           <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '12px' }}>{topic.title}</h1>
@@ -112,7 +112,7 @@ const TopicDetails = () => {
               <div>
                 <span className="stat-label">Recommended Duration</span>
                 <h4 className="stat-value" style={{ fontSize: '18px' }}>
-                  {formatDuration(topic.recommendedDuration)}
+                  {formatDuration(topic.recommendedDuration || topic.speakTime || 60)}
                 </h4>
               </div>
             </div>
@@ -122,7 +122,7 @@ const TopicDetails = () => {
               <div>
                 <span className="stat-label">Preparation Time</span>
                 <h4 className="stat-value" style={{ fontSize: '18px' }}>
-                  {topic.preparationTime ? `${topic.preparationTime} Seconds` : 'None'}
+                  {(topic.preparationTime || topic.prepTime) ? `${topic.preparationTime || topic.prepTime} Seconds` : '30 Seconds'}
                 </h4>
               </div>
             </div>

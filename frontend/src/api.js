@@ -53,6 +53,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Beginner',
     prepTime: 30,
     speakTime: 60,
+    preparationTime: 30,
+    recommendedDuration: 60,
+    instructions: 'Speak clearly about your personal background, family, daily activities, and favorite hobbies.',
     isActive: true,
   },
   {
@@ -63,6 +66,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Intermediate',
     prepTime: 45,
     speakTime: 90,
+    preparationTime: 45,
+    recommendedDuration: 90,
+    instructions: 'Discuss why this destination is special, unique local culture, food, and your favorite travel memories.',
     isActive: true,
   },
   {
@@ -73,6 +79,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Advanced',
     prepTime: 60,
     speakTime: 120,
+    preparationTime: 60,
+    recommendedDuration: 120,
+    instructions: 'Analyze the benefits and challenges of AI automation, smart devices, and future societal impacts.',
     isActive: true,
   },
   {
@@ -83,6 +92,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Intermediate',
     prepTime: 45,
     speakTime: 90,
+    preparationTime: 45,
+    recommendedDuration: 90,
+    instructions: 'Detail your 5-year career roadmap, core strengths, leadership style, and professional growth targets.',
     isActive: true,
   },
   {
@@ -93,6 +105,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Beginner',
     prepTime: 30,
     speakTime: 60,
+    preparationTime: 30,
+    recommendedDuration: 60,
+    instructions: 'Share your daily workout routines, balanced dietary habits, and tips for stress management.',
     isActive: true,
   },
   {
@@ -103,6 +118,9 @@ const INITIAL_TOPICS = [
     difficulty: 'Advanced',
     prepTime: 60,
     speakTime: 120,
+    preparationTime: 60,
+    recommendedDuration: 120,
+    instructions: 'Explain techniques for body language, vocal modulation, audience interaction, and stage confidence.',
     isActive: true,
   },
 ];
@@ -188,7 +206,7 @@ const getStoredTopics = () => {
   const mergedMap = {};
   INITIAL_TOPICS.forEach((t) => { mergedMap[t._id] = t; });
   if (Array.isArray(stored)) {
-    stored.forEach((t) => { if (t && t._id) mergedMap[t._id] = t; });
+    stored.forEach((t) => { if (t && t._id) mergedMap[t._id] = { ...mergedMap[t._id], ...t }; });
   }
   const result = Object.values(mergedMap);
   localStorage.setItem('speakora_demo_topics', JSON.stringify(result));
