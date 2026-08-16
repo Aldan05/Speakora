@@ -92,4 +92,4 @@ Access the application at `http://localhost`.
 
 > "Speakora is a full-stack AI-powered English speaking analysis platform built using React, Node.js, Express.js, MongoDB and Python FastAPI. It uses Whisper for speech-to-text and an NLP pipeline to analyze grammar, vocabulary and fluency. Users can record speaking sessions, receive AI-generated feedback and track their progress through analytics, while administrators can monitor users, sessions, AI processing and platform performance."
 
-use it live hosted :  https://aldan05.github.io/Speakora
+use it live hosted demo :  https://aldan05.github.io/Speakora
