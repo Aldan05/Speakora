@@ -542,4 +542,5 @@ async function handleLiveDemoRoute(config) {
   return { data: { success: true } };
 }
 
+export { getStoredTopics, getStoredSessions };
 export default api;

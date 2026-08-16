@@ -1,26 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Layers, HelpCircle, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
-import api from '../api';
+import api, { getStoredTopics } from '../api';
 
 const TopicDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [topic, setTopic] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [topic, setTopic] = useState(() => {
+    const topics = getStoredTopics();
+    return topics.find((t) => String(t._id).toLowerCase() === String(id).toLowerCase()) ||
+           topics.find((t) => String(t.title).toLowerCase().includes(String(id).toLowerCase())) ||
+           topics[0];
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTopicDetails = async () => {
       try {
-        setLoading(true);
+        if (!topic) setLoading(true);
         setError('');
         const res = await api.get(`/topics/${id}`);
-        setTopic(res.data.topic);
+        if (res.data && res.data.topic) {
+          setTopic(res.data.topic);
+        }
       } catch (err) {
         console.error('Fetch topic detail error:', err);
-        setError(err.response?.data?.message || 'Unable to load topic details.');
+        if (!topic) {
+          setError(err.response?.data?.message || 'Unable to load topic details.');
+        }
       } finally {
         setLoading(false);
       }

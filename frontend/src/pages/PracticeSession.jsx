@@ -13,7 +13,7 @@ import {
   CheckCircle,
   RefreshCw,
 } from 'lucide-react';
-import api from '../api';
+import api, { getStoredTopics } from '../api';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import WaveformVisualizer from '../components/WaveformVisualizer';
 import AudioPlayer from '../components/AudioPlayer';
@@ -22,13 +22,18 @@ const PracticeSession = () => {
   const { topicId } = useParams();
   const navigate = useNavigate();
 
-  const [topic, setTopic] = useState(null);
-  const [loadingTopic, setLoadingTopic] = useState(true);
+  const [topic, setTopic] = useState(() => {
+    const topics = getStoredTopics();
+    return topics.find((t) => String(t._id).toLowerCase() === String(topicId).toLowerCase()) ||
+           topics.find((t) => String(t.title).toLowerCase().includes(String(topicId).toLowerCase())) ||
+           topics[0];
+  });
+  const [loadingTopic, setLoadingTopic] = useState(false);
   const [topicError, setTopicError] = useState('');
 
   // Step flow: 'prep', 'recording', 'review', 'submitting'
   const [step, setStep] = useState('prep');
-  const [prepCountdown, setPrepCountdown] = useState(30);
+  const [prepCountdown, setPrepCountdown] = useState(() => topic?.preparationTime || 30);
 
   const {
     isRecording,
@@ -51,17 +56,21 @@ const PracticeSession = () => {
   useEffect(() => {
     const fetchTopic = async () => {
       try {
-        setLoadingTopic(true);
+        if (!topic) setLoadingTopic(true);
         setTopicError('');
         const res = await api.get(`/topics/${topicId}`);
         const t = res.data.topic;
-        setTopic(t);
-        if (t.preparationTime !== undefined) {
-          setPrepCountdown(t.preparationTime || 30);
+        if (t) {
+          setTopic(t);
+          if (t.preparationTime !== undefined) {
+            setPrepCountdown(t.preparationTime || 30);
+          }
         }
       } catch (err) {
         console.error('Fetch topic error:', err);
-        setTopicError(err.response?.data?.message || 'Failed to load topic details.');
+        if (!topic) {
+          setTopicError(err.response?.data?.message || 'Failed to load topic details.');
+        }
       } finally {
         setLoadingTopic(false);
       }
