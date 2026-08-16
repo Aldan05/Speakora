@@ -176,16 +176,23 @@ const saveStoredSessions = (sessions) => {
 };
 
 const getStoredTopics = () => {
+  let stored = [];
   const local = localStorage.getItem('speakora_demo_topics');
   if (local) {
     try {
-      return JSON.parse(local);
+      stored = JSON.parse(local);
     } catch (e) {
       console.warn('Failed to parse demo topics:', e);
     }
   }
-  localStorage.setItem('speakora_demo_topics', JSON.stringify(INITIAL_TOPICS));
-  return INITIAL_TOPICS;
+  const mergedMap = {};
+  INITIAL_TOPICS.forEach((t) => { mergedMap[t._id] = t; });
+  if (Array.isArray(stored)) {
+    stored.forEach((t) => { if (t && t._id) mergedMap[t._id] = t; });
+  }
+  const result = Object.values(mergedMap);
+  localStorage.setItem('speakora_demo_topics', JSON.stringify(result));
+  return result;
 };
 
 // ----------------------------------------------------
@@ -286,10 +293,13 @@ async function handleLiveDemoRoute(config) {
   }
 
   // 5. Single Topic Details
-  if (url.match(/\/topics\/[a-zA-Z0-9_-]+$/) && method === 'GET') {
-    const topicId = url.split('/topics/')[1];
+  if (url.includes('/topics/') && method === 'GET' && !url.includes('/admin')) {
+    const parts = url.split('/topics/')[1];
+    const topicId = parts ? parts.split('?')[0].replace(/\/$/, '') : 't1';
     const topics = getStoredTopics();
-    const topic = topics.find((t) => String(t._id).toLowerCase() === String(topicId).toLowerCase()) || topics[0];
+    const topic = topics.find((t) => String(t._id).toLowerCase() === String(topicId).toLowerCase()) ||
+                  topics.find((t) => String(t.title).toLowerCase().includes(String(topicId).toLowerCase())) ||
+                  topics[0];
     return { data: { success: true, topic } };
   }
 
