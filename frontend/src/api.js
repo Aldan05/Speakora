@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Detect if running on live static host (e.g. GitHub Pages) or local backend
-const isLiveHost = window.location.hostname.includes('github.io') || window.location.hostname !== 'localhost';
+const isLiveHost = window.location.hostname.includes('github.io') || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 const BACKEND_URL = isLiveHost ? 'https://tame-chairs-judge.loca.lt/api' : 'http://localhost:5000/api';
 
 const api = axios.create({
@@ -13,10 +13,27 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = localStorage.getItem('speakora_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Direct Instant Interceptor for Static Live Hosts (e.g. GitHub Pages)
+    if (isLiveHost) {
+      const mockRes = await handleLiveDemoRoute(config);
+      if (mockRes) {
+        config.adapter = async () => {
+          return {
+            data: mockRes.data,
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config: config,
+            request: {},
+          };
+        };
+      }
     }
     return config;
   },
@@ -180,7 +197,6 @@ api.interceptors.response.use(
     const config = error.config;
     // Handle offline / live host fallback
     if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || isLiveHost) {
-      console.log(`[Speakora Live Demo Mode] Handling route: ${config.method.toUpperCase()} ${config.url}`);
       const mockRes = await handleLiveDemoRoute(config);
       if (mockRes) {
         return mockRes;
@@ -204,6 +220,16 @@ async function handleLiveDemoRoute(config) {
     }
   } catch (e) {
     data = {};
+  }
+
+  // 0. Auth Me
+  if (url.includes('/auth/me') && method === 'GET') {
+    const storedUserStr = localStorage.getItem('speakora_user');
+    let user = { id: 'demo-user-1', name: 'Demo Speaker', email: 'aldan@example.com', role: 'USER' };
+    if (storedUserStr) {
+      try { user = JSON.parse(storedUserStr); } catch (e) {}
+    }
+    return { data: { success: true, user } };
   }
 
   // 1. Auth Login
@@ -263,7 +289,7 @@ async function handleLiveDemoRoute(config) {
   if (url.match(/\/topics\/[a-zA-Z0-9_-]+$/) && method === 'GET') {
     const topicId = url.split('/topics/')[1];
     const topics = getStoredTopics();
-    const topic = topics.find((t) => t._id === topicId) || topics[0];
+    const topic = topics.find((t) => String(t._id).toLowerCase() === String(topicId).toLowerCase()) || topics[0];
     return { data: { success: true, topic } };
   }
 
@@ -278,7 +304,7 @@ async function handleLiveDemoRoute(config) {
     }
 
     const topics = getStoredTopics();
-    const targetTopic = topics.find((t) => t._id === topicId) || topics[0];
+    const targetTopic = topics.find((t) => String(t._id).toLowerCase() === String(topicId).toLowerCase()) || topics[0];
 
     // Client-side AI Scoring Engine
     const dynGrammar = Math.floor(Math.random() * 12) + 85;
