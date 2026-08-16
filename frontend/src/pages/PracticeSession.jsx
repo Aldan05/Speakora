@@ -41,6 +41,7 @@ const PracticeSession = () => {
     duration,
     audioBlob,
     audioUrl,
+    liveTranscript,
     error: recorderError,
     permissionStatus,
     stream,
@@ -127,6 +128,7 @@ const PracticeSession = () => {
       const formData = new FormData();
       formData.append('topicId', topicId);
       formData.append('duration', duration || 10);
+      formData.append('transcript', liveTranscript || '');
       formData.append('audio', targetBlob || audioBlob || new Blob([], { type: 'audio/webm' }), 'speaking-practice.webm');
 
       const res = await api.post('/sessions', formData, {

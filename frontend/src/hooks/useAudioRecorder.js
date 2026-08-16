@@ -6,13 +6,15 @@ export const useAudioRecorder = () => {
   const [duration, setDuration] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [error, setError] = useState(null);
-  const [permissionStatus, setPermissionStatus] = useState('prompt'); // 'prompt', 'granted', 'denied'
+  const [permissionStatus, setPermissionStatus] = useState('prompt');
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Request browser microphone permission
   const requestPermission = async () => {
@@ -36,7 +38,7 @@ export const useAudioRecorder = () => {
     }
   };
 
-  // Start audio recording
+  // Start audio recording and live speech-to-text
   const start = async () => {
     setError(null);
     let stream = streamRef.current;
@@ -49,6 +51,7 @@ export const useAudioRecorder = () => {
     audioChunksRef.current = [];
     setAudioBlob(null);
     setAudioUrl(null);
+    setLiveTranscript('');
     setDuration(0);
 
     // Detect supported MIME type
@@ -82,6 +85,30 @@ export const useAudioRecorder = () => {
       setIsRecording(true);
       setIsPaused(false);
 
+      // Start Web Speech API SpeechRecognition if supported
+      if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        try {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event) => {
+            let text = '';
+            for (let i = 0; i < event.results.length; i++) {
+              text += event.results[i][0].transcript + ' ';
+            }
+            setLiveTranscript(text.trim());
+          };
+
+          recognition.start();
+          recognitionRef.current = recognition;
+        } catch (e) {
+          console.warn('Live SpeechRecognition error:', e);
+        }
+      }
+
       // Start duration timer
       timerIntervalRef.current = setInterval(() => {
         setDuration((prev) => prev + 1);
@@ -100,6 +127,9 @@ export const useAudioRecorder = () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
     }
   };
 
@@ -111,6 +141,9 @@ export const useAudioRecorder = () => {
       timerIntervalRef.current = setInterval(() => {
         setDuration((prev) => prev + 1);
       }, 1000);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }
     }
   };
 
@@ -122,6 +155,11 @@ export const useAudioRecorder = () => {
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+    }
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current = null;
     }
 
     // Release microphone tracks safely
@@ -139,6 +177,7 @@ export const useAudioRecorder = () => {
     stop();
     setAudioBlob(null);
     setAudioUrl(null);
+    setLiveTranscript('');
     setDuration(0);
     setError(null);
   };
@@ -155,6 +194,7 @@ export const useAudioRecorder = () => {
     duration,
     audioBlob,
     audioUrl,
+    liveTranscript,
     error,
     permissionStatus,
     stream: streamRef.current,
