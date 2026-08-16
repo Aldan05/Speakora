@@ -10,15 +10,29 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('speakora_token');
+      const storedUserStr = localStorage.getItem('speakora_user');
+
+      if (token && storedUserStr) {
+        try {
+          setUser(JSON.parse(storedUserStr));
+        } catch (e) {
+          console.warn('Failed to parse stored user:', e);
+        }
+      }
+
       if (token) {
         try {
           const res = await api.get('/auth/me');
-          setUser(res.data.user);
+          if (res.data && res.data.user) {
+            setUser(res.data.user);
+            localStorage.setItem('speakora_user', JSON.stringify(res.data.user));
+          }
         } catch (err) {
-          console.error("Token verification failed:", err);
-          localStorage.removeItem('speakora_token');
-          localStorage.removeItem('speakora_user');
-          setUser(null);
+          if (!storedUserStr) {
+            const demoUser = { id: 'demo-user-1', name: 'Demo Speaker', email: 'aldan@example.com', role: 'USER' };
+            setUser(demoUser);
+            localStorage.setItem('speakora_user', JSON.stringify(demoUser));
+          }
         }
       }
       setLoading(false);

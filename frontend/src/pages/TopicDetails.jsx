@@ -66,7 +66,7 @@ const TopicDetails = () => {
           <AlertCircle size={20} />
           <span>{error}</span>
         </div>
-      ) : loading ? (
+      ) : loading || !topic ? (
         <p style={{ color: 'var(--text-muted)' }}>Loading topic details...</p>
       ) : (
         <div>

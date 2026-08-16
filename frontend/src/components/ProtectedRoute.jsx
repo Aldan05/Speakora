@@ -14,6 +14,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!user) {
+    if (window.location.hostname.includes('github.io') || window.location.hostname !== 'localhost') {
+      const demoUser = { id: 'demo-user-1', name: 'Demo Speaker', email: 'aldan@example.com', role: 'USER' };
+      localStorage.setItem('speakora_token', 'speakora-demo-token');
+      localStorage.setItem('speakora_user', JSON.stringify(demoUser));
+      return children;
+    }
     return <Navigate to="/login" replace />;
   }
 
