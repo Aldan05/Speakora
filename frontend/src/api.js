@@ -326,10 +326,18 @@ async function handleLiveDemoRoute(config) {
     let duration = 30;
     let userTranscript = '';
 
-    if (data instanceof FormData) {
-      topicId = data.get('topicId') || 't1';
-      duration = parseInt(data.get('duration'), 10) || 30;
-      userTranscript = data.get('transcript') || '';
+    try {
+      if (data && typeof data.get === 'function') {
+        topicId = data.get('topicId') || 't1';
+        duration = parseInt(data.get('duration'), 10) || 30;
+        userTranscript = data.get('transcript') || '';
+      } else if (data && typeof data === 'object') {
+        topicId = data.topicId || 't1';
+        duration = parseInt(data.duration || 30, 10) || 30;
+        userTranscript = data.transcript || '';
+      }
+    } catch (e) {
+      console.warn('FormData parsing warning:', e);
     }
 
     const topics = getStoredTopics();
@@ -345,8 +353,8 @@ async function handleLiveDemoRoute(config) {
       t6: "Delivering an impactful public presentation requires deep preparation, vocal clarity, and audience engagement. Maintaining eye contact, using natural hand gestures, and controlling speech pace help project confidence on stage."
     };
 
-    const finalTranscript = (userTranscript && userTranscript.trim().length > 10)
-      ? userTranscript.trim()
+    const finalTranscript = (userTranscript && String(userTranscript).trim().length > 10)
+      ? String(userTranscript).trim()
       : (topicTranscripts[targetTopic._id] || topicTranscripts.t1);
 
     // Compute REAL AI Analytics from finalTranscript!
