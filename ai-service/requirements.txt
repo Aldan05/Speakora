@@ -1,0 +1,9 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+openai-whisper
+python-multipart
+pydantic>=2.0.0
+python-dotenv
+language-tool-python
+pytest
+requests

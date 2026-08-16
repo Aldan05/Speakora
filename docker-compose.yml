@@ -1,0 +1,59 @@
+# ==========================================
+# Speakora Full-Stack Docker Compose System
+# ==========================================
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: speakora-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: speakora
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: speakora-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongodb:27017/speakora
+      JWT_SECRET: production_super_secret_jwt_key_speakora_2026
+      FASTAPI_AI_URL: http://ai-service:8000
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+      - ai-service
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: speakora-ai-service
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      WHISPER_MODEL: base
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: speakora-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
