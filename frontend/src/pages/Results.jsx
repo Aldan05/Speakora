@@ -27,7 +27,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import api from '../api';
+import api, { getStoredSessions } from '../api';
 import AudioPlayer from '../components/AudioPlayer';
 import ScoreCard from '../components/ScoreCard';
 
@@ -35,8 +35,11 @@ const Results = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
 
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(() => {
+    const sessions = getStoredSessions();
+    return sessions.find((s) => String(s._id) === String(sessionId)) || sessions[0] || null;
+  });
+  const [loading, setLoading] = useState(!session);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -45,17 +48,22 @@ const Results = () => {
 
   const fetchSessionDetails = async () => {
     try {
+      if (!session) setLoading(true);
       const res = await api.get(`/sessions/${sessionId}`);
       const s = res.data.session;
-      setSession(s);
-      setError('');
+      if (s) {
+        setSession(s);
+        setError('');
+      }
       return s;
     } catch (err) {
       console.error('Fetch session error:', err);
-      if (err.response?.status === 403) {
-        setError('Access Denied. You do not have permission to view this session.');
-      } else {
-        setError(err.response?.data?.message || 'Unable to load session results.');
+      if (!session) {
+        if (err.response?.status === 403) {
+          setError('Access Denied. You do not have permission to view this session.');
+        } else {
+          setError(err.response?.data?.message || 'Unable to load session results.');
+        }
       }
       return null;
     } finally {
@@ -90,24 +98,23 @@ const Results = () => {
     }
   };
 
-  if (loading) {
+  if (loading || !session) {
+    if (error) {
+      return (
+        <div className="dashboard-container" style={{ maxWidth: '700px' }}>
+          <div className="error-banner">
+            <AlertCircle size={20} />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => navigate('/dashboard')} className="btn-primary" style={{ marginTop: '16px' }}>
+            <ArrowLeft size={16} /> Return to Dashboard
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="dashboard-container" style={{ maxWidth: '700px', textAlign: 'center', padding: '48px 24px' }}>
         <p style={{ color: 'var(--text-muted)' }}>Retrieving speaking session results...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard-container" style={{ maxWidth: '700px' }}>
-        <div className="error-banner">
-          <AlertCircle size={20} />
-          <span>{error}</span>
-        </div>
-        <button onClick={() => navigate('/dashboard')} className="btn-primary" style={{ marginTop: '16px' }}>
-          <ArrowLeft size={16} /> Return to Dashboard
-        </button>
       </div>
     );
   }
@@ -126,13 +133,14 @@ const Results = () => {
   ];
 
   const getScoreCategory = (val) => {
+    if (val === undefined || val === null) return { label: 'Good', color: '#818cf8' };
     if (val >= 90) return { label: 'Excellent', color: '#34d399' };
     if (val >= 75) return { label: 'Good', color: '#818cf8' };
     if (val >= 60) return { label: 'Needs Improvement', color: '#fbbf24' };
     return { label: 'Needs Attention', color: '#ef4444' };
   };
 
-  const overallCategory = session.overallScore !== null ? getScoreCategory(session.overallScore) : null;
+  const overallCategory = getScoreCategory(session.overallScore);
   const paceVal = session.paceScore || (session.wordsPerMinute ? (session.wordsPerMinute >= 130 && session.wordsPerMinute <= 150 ? 100 : 75) : 75);
 
   return (

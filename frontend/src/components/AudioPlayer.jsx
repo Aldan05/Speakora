@@ -120,7 +120,11 @@ const AudioPlayer = ({ src, fallbackDuration = 0 }) => {
           const isPassed = i <= activeBars;
           canvasCtx.fillStyle = isPassed ? '#818cf8' : 'rgba(99, 102, 241, 0.25)';
           canvasCtx.beginPath();
-          canvasCtx.roundRect(x, y, barWidth, barHeight, 3);
+          if (canvasCtx.roundRect) {
+            canvasCtx.roundRect(x, y, barWidth, barHeight, 3);
+          } else {
+            canvasCtx.rect(x, y, barWidth, barHeight);
+          }
           canvasCtx.fill();
         }
       } else {
@@ -132,7 +136,11 @@ const AudioPlayer = ({ src, fallbackDuration = 0 }) => {
           const isPassed = i <= activeBars;
           canvasCtx.fillStyle = isPassed ? '#34d399' : 'rgba(148, 163, 184, 0.3)';
           canvasCtx.beginPath();
-          canvasCtx.roundRect(x, y, barWidth, pseudoHeight, 3);
+          if (canvasCtx.roundRect) {
+            canvasCtx.roundRect(x, y, barWidth, pseudoHeight, 3);
+          } else {
+            canvasCtx.rect(x, y, barWidth, pseudoHeight);
+          }
           canvasCtx.fill();
         }
       }
